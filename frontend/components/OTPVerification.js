@@ -101,7 +101,7 @@ const OTPVerification = ({ onVerified, redirectTo = "/" }) => {
                     OTP Verification
                 </h2>
                 <p className="text-center text-sm text-black mb-1">
-                    We’ve sent a verification code to
+                    We&apos;ve sent a verification code to
                 </p>
                 <p className="text-center font-semibold text-[#444] mb-4">
                     {maskedEmail}
@@ -144,7 +144,7 @@ const OTPVerification = ({ onVerified, redirectTo = "/" }) => {
                     <div className="text-center mt-4">
                         <div className="mt-4 text-sm">
                             <p className="text-sm text-black mb-1">
-                                Didn't receive the OTP?
+                                Didn&apos;t receive the OTP?
                             </p>
                             {timer > 0 ? (
                                 <p className=" text-black">

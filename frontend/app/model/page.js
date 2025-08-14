@@ -48,7 +48,7 @@ const ModelsPage = () => {
                         </div>
                     ))
                 ) : (
-                    <p>No models found for "{searchQuery}"</p>
+                    <p>No models found for &quot;{searchQuery}&quot;</p>
                 )}
             </div>
         </div>

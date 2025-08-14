@@ -412,11 +412,11 @@ useEffect(() => {
                                                     {search && (
                                                         <>
                                                             {" "}
-                                                            for "
+                                                            for &quot;
                                                             <strong>
                                                                 {search}
                                                             </strong>
-                                                            "
+                                                            &quot;
                                                         </>
                                                     )}
                                                 </p>

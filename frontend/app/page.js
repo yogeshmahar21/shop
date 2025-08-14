@@ -108,7 +108,7 @@ const exploreImage = [
     { src: "./sec.png" },
 ];
 
-const page = () => {
+const Page = () => {
     const scrollRef = useRef(null);
 
     const scroll = (direction) => {
@@ -291,7 +291,7 @@ const page = () => {
                                 <b>3D models</b> carefully crafted by top
                                 designers. Whether you're looking for engines,
                                 gears, assemblies, or detailed industrial parts
-                                – we’ve got a wide range of professional-grade
+                                – we&apos;ve got a wide range of professional-grade
                                 assets ready for your next project.
                                 {/* All models are <b>high-quality</b> and optimized for production. */}
                             </p>
@@ -734,9 +734,9 @@ const page = () => {
                                         className="w-16 h-16 rounded-full mx-auto mb-4"
                                     />
                                     <p className="text-gray-700 italic">
-                                        “This platform helped me reach a global
+                                        &quot;This platform helped me reach a global
                                         audience for my CAD models. Super
-                                        intuitive!”
+                                        intuitive!&quot;
                                     </p>
                                     <h4 className="mt-4 font-semibold text-gray-800">
                                         Aarav Sharma
@@ -758,9 +758,9 @@ const page = () => {
                                         className="w-16 h-16 rounded-full mx-auto mb-4"
                                     />
                                     <p className="text-gray-700 italic">
-                                        “I’ve uploaded over 100 models and
+                                        &quot;I&apos;ve uploaded over 100 models and
                                         gained recognition from top design
-                                        firms.”
+                                        firms.&quot;
                                     </p>
                                     <h4 className="mt-4 font-semibold text-gray-800">
                                         Sneha Verma
@@ -782,8 +782,8 @@ const page = () => {
                                         className="w-16 h-16 rounded-full mx-auto mb-4"
                                     />
                                     <p className="text-gray-700 italic">
-                                        “Selling my 3D designs was never this
-                                        easy. Great experience and support.”
+                                        &quot;Selling my 3D designs was never this
+                                        easy. Great experience and support.&quot;
                                     </p>
                                     <h4 className="mt-4 font-semibold text-gray-800">
                                         Rahul Mehta
@@ -838,4 +838,4 @@ const page = () => {
     );
 };
 
-export default page;
+export default Page;

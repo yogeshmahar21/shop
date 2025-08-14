@@ -1,237 +1,236 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useState, useEffect, useMemo, useRef } from "react";
 import { models } from "@/lib/pData";
 import CustomerReviewCard from "@/components/CustomerReviewCard";
 import { ChevronDown } from "lucide-react";
 import RelatedProducts from "@/components/RelatedProducts";
 import { IoIosStar } from "react-icons/io";
-// import Link from "next/link";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/effect-coverflow";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCoverflow, Navigation, Pagination } from "swiper/modules";
+
 const ReviewsPage = () => {
-    const { id } = useParams();
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    // const [model, setModel] = useState(null);
-    const product = models.find((item) => item.id === parseInt(id));
-    const allReviews = product?.review || [];
-    const reviewsPerPage = 8;
-    const model = models.find((m) => m.id.toString() === id);
-    // Filters and controls
-    const [recent, setRecent] = useState([]);
-    const [search, setSearch] = useState("");
-    const [searchInput, setSearchInput] = useState("");
-    const [ratingFilter, setRatingFilter] = useState("");
-    const [sortBy, setSortBy] = useState("");
-    const [dateRange, setDateRange] = useState("");
-    const [verifiedOnly, setVerifiedOnly] = useState(false);
-    const [tagsFilter, setTagsFilter] = useState("");
-    const [currentPage, setCurrentPage] = useState(1);
-    const currentModel = useMemo(
-        () => models.find((m) => m.id.toString() === id),
-        [id]
+  const params = useParams() || {};
+  const id = params.id;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Guard against undefined params (SSR safety)
+  if (!id) return null;
+
+  const currentModel = useMemo(
+    () => models.find((m) => m.id.toString() === id),
+    [id]
+  );
+  const allReviews = currentModel?.review || [];
+
+  const reviewsPerPage = 8;
+
+  // Filters and controls
+  const [recent, setRecent] = useState([]);
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [ratingFilter, setRatingFilter] = useState("");
+  const [sortBy, setSortBy] = useState("");
+  const [dateRange, setDateRange] = useState("");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [tagsFilter, setTagsFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Dropdown states
+  const [isRatingDropdownOpen, setIsRatingDropdownOpen] = useState(false);
+  const [isDateRangeDropdownOpen, setIsDateRangeDropdownOpen] = useState(false);
+  const [isSortByDropdownOpen, setIsSortByDropdownOpen] = useState(false);
+
+  const dropdownRefs = {
+    one: useRef(null),
+    two: useRef(null),
+    three: useRef(null),
+  };
+
+  // Save recently viewed (SSR-safe)
+  useEffect(() => {
+    if (!currentModel || typeof window === "undefined") return;
+
+    const stored = JSON.parse(localStorage.getItem("recentlyViewed")) || [];
+    const filtered = stored.filter((m) => m.id !== currentModel.id);
+    const updatedStorage = [currentModel, ...filtered].slice(0, 8);
+
+    localStorage.setItem("recentlyViewed", JSON.stringify(updatedStorage));
+
+    const recentlyViewedToShow = updatedStorage.filter(
+      (m) => m.id !== currentModel.id
     );
-    // const currentModel = models.find((m) => m.id.toString() === id);
-    // setModel(currentModel);
-    // console.log("first");
-    // console.log(model);
-    // console.log("second");
-    useEffect(() => {
-        if (!currentModel) return; // Add this check!
+    setRecent(recentlyViewedToShow);
+  }, [id, currentModel]);
 
-        const stored = JSON.parse(localStorage.getItem("recentlyViewed")) || [];
+  // Initialize from URL params
+  useEffect(() => {
+    const initialSearch = searchParams.get("search") || "";
+    setSearch(initialSearch);
+    setSearchInput(initialSearch);
+    setRatingFilter(searchParams.get("rating") || "");
+    setSortBy(searchParams.get("sort") || "");
+    setDateRange(searchParams.get("range") || "");
+    setVerifiedOnly(searchParams.get("verified") === "true");
+    setTagsFilter(searchParams.get("tags") || "");
+    setCurrentPage(parseInt(searchParams.get("page")) || 1);
+  }, [searchParams]);
 
-        const filtered = stored.filter((m) => m.id !== currentModel.id);
-        const updatedStorage = [currentModel, ...filtered].slice(0, 8);
+  // Update URL when filters change
+  const updateURLParams = (key, value) => {
+    const params = new URLSearchParams(searchParams.toString());
+    value ? params.set(key, value) : params.delete(key);
 
-        localStorage.setItem("recentlyViewed", JSON.stringify(updatedStorage));
+    if (key !== "page") {
+      params.set("page", 1);
+      setCurrentPage(1);
+    }
 
-        const recentlyViewedToShow = updatedStorage.filter(
-            (m) => m.id !== currentModel.id
-        );
-        setRecent(recentlyViewedToShow);
-    }, [id, currentModel]);
-    if (!currentModel) return null;
-    // Dropdown states
-    const [isRatingDropdownOpen, setIsRatingDropdownOpen] = useState(false);
-    const [isDateRangeDropdownOpen, setIsDateRangeDropdownOpen] =
-        useState(false);
-    const [isSortByDropdownOpen, setIsSortByDropdownOpen] = useState(false);
-    const dropdownRefs = {
-        one: useRef(null),
-        two: useRef(null),
-        three: useRef(null),
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
+
+  // Memoized filtered and sorted reviews
+  const filteredReviews = useMemo(() => {
+    let filtered = [...allReviews];
+
+    if (search.trim()) {
+      const term = search.toLowerCase();
+      filtered = filtered.filter(
+        (r) =>
+          r.name.toLowerCase().includes(term) ||
+          r.comment.toLowerCase().includes(term)
+      );
+    }
+
+    if (ratingFilter) {
+      filtered = filtered.filter((r) => r.rating === parseInt(ratingFilter));
+    }
+
+    if (dateRange) {
+      const limitDate = new Date();
+      limitDate.setDate(limitDate.getDate() - parseInt(dateRange));
+      filtered = filtered.filter((r) => new Date(r.date) >= limitDate);
+    }
+
+    if (verifiedOnly) {
+      filtered = filtered.filter((r) => r.verified);
+    }
+
+    if (tagsFilter) {
+      const tag = tagsFilter.toLowerCase();
+      filtered = filtered.filter((r) =>
+        r.comment.toLowerCase().includes(tag)
+      );
+    }
+
+    if (sortBy === "recent") {
+      filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+    } else if (sortBy === "rating") {
+      filtered.sort((a, b) => b.rating - a.rating);
+    }
+
+    return filtered;
+  }, [
+    allReviews,
+    search,
+    ratingFilter,
+    sortBy,
+    dateRange,
+    verifiedOnly,
+    tagsFilter,
+  ]);
+
+  const indexOfLastReview = currentPage * reviewsPerPage;
+  const currentReviews = filteredReviews.slice(
+    indexOfLastReview - reviewsPerPage,
+    indexOfLastReview
+  );
+  const totalPages = Math.ceil(filteredReviews.length / reviewsPerPage);
+
+  // Event Handlers
+  const handleSearch = () => {
+    setSearch(searchInput);
+    setCurrentPage(1);
+    updateURLParams("search", searchInput);
+  };
+
+  const handleFilterChange = (setter, key) => (e) => {
+    const value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setter(value);
+    setCurrentPage(1);
+    updateURLParams(key, value === true ? "true" : value || "");
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    updateURLParams("page", page);
+  };
+
+  const toggleDropdown = (dropdown) => {
+    if (dropdown === "rating") {
+      setIsRatingDropdownOpen((prev) => !prev);
+      setIsDateRangeDropdownOpen(false);
+      setIsSortByDropdownOpen(false);
+    } else if (dropdown === "dateRange") {
+      setIsDateRangeDropdownOpen((prev) => !prev);
+      setIsRatingDropdownOpen(false);
+      setIsSortByDropdownOpen(false);
+    } else if (dropdown === "sortBy") {
+      setIsSortByDropdownOpen((prev) => !prev);
+      setIsRatingDropdownOpen(false);
+      setIsDateRangeDropdownOpen(false);
+    }
+  };
+
+  const closeDropdown = (dropdown) => {
+    if (dropdown === "rating") setIsRatingDropdownOpen(false);
+    if (dropdown === "dateRange") setIsDateRangeDropdownOpen(false);
+    if (dropdown === "sortBy") setIsSortByDropdownOpen(false);
+  };
+
+  const handleClickOutside = (event) => {
+    if (
+      dropdownRefs.one.current?.contains(event.target) ||
+      dropdownRefs.two.current?.contains(event.target) ||
+      dropdownRefs.three.current?.contains(event.target)
+    ) {
+      return;
+    }
+    setIsRatingDropdownOpen(false);
+    setIsDateRangeDropdownOpen(false);
+    setIsSortByDropdownOpen(false);
+  };
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
     };
-    // Initialize from URL params
-    useEffect(() => {
-        const initialSearch = searchParams.get("search") || "";
-        setSearch(initialSearch);
-        setSearchInput(initialSearch);
-        setRatingFilter(searchParams.get("rating") || "");
-        setSortBy(searchParams.get("sort") || "");
-        setDateRange(searchParams.get("range") || "");
-        setVerifiedOnly(searchParams.get("verified") === "true");
-        setTagsFilter(searchParams.get("tags") || "");
-        setCurrentPage(parseInt(searchParams.get("page")) || 1);
-    }, []);
+  }, []);
 
-    // Update URL when filters change
-    const updateURLParams = (key, value) => {
-        const params = new URLSearchParams(searchParams.toString());
-        value ? params.set(key, value) : params.delete(key);
-        if (key !== "page") {
-            params.set("page", 1);
-            setCurrentPage(1);
-        }
-        router.replace(`?${params.toString()}`, { scroll: false });
-    };
-
-    // Memoized filtered and sorted reviews
-    const filteredReviews = useMemo(() => {
-        let filtered = [...allReviews];
-
-        if (search.trim()) {
-            const term = search.toLowerCase();
-            filtered = filtered.filter(
-                (r) =>
-                    r.name.toLowerCase().includes(term) ||
-                    r.comment.toLowerCase().includes(term)
-            );
-        }
-
-        if (ratingFilter) {
-            filtered = filtered.filter(
-                (r) => r.rating === parseInt(ratingFilter)
-            );
-        }
-
-        if (dateRange) {
-            const limitDate = new Date();
-            limitDate.setDate(limitDate.getDate() - parseInt(dateRange));
-            filtered = filtered.filter((r) => new Date(r.date) >= limitDate);
-        }
-
-        if (verifiedOnly) {
-            filtered = filtered.filter((r) => r.verified);
-        }
-
-        if (tagsFilter) {
-            const tag = tagsFilter.toLowerCase();
-            filtered = filtered.filter((r) =>
-                r.comment.toLowerCase().includes(tag)
-            );
-        }
-
-        if (sortBy === "recent") {
-            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-        } else if (sortBy === "rating") {
-            filtered.sort((a, b) => b.rating - a.rating);
-        }
-
-        return filtered;
-    }, [
-        allReviews,
-        search,
-        ratingFilter,
-        sortBy,
-        dateRange,
-        verifiedOnly,
-        tagsFilter,
-    ]);
-
-    const indexOfLastReview = currentPage * reviewsPerPage;
-    const currentReviews = filteredReviews.slice(
-        indexOfLastReview - reviewsPerPage,
-        indexOfLastReview
-    );
-    const totalPages = Math.ceil(filteredReviews.length / reviewsPerPage);
-
-    // Event Handlers
-    const handleSearch = () => {
-        setSearch(searchInput);
-        setCurrentPage(1);
-        updateURLParams("search", searchInput);
-    };
-
-    const handleFilterChange = (setter, key) => (e) => {
-        const value =
-            e.target.type === "checkbox" ? e.target.checked : e.target.value;
-        setter(value);
-        setCurrentPage(1);
-        updateURLParams(key, value === true ? "true" : value || "");
-    };
-
-    const handlePageChange = (page) => {
-        setCurrentPage(page);
-        updateURLParams("page", page);
-    };
-
-    const toggleDropdown = (dropdown) => {
-        if (dropdown === "rating") {
-            setIsRatingDropdownOpen(!isRatingDropdownOpen);
-            setIsDateRangeDropdownOpen(false);
-            setIsSortByDropdownOpen(false);
-        } else if (dropdown === "dateRange") {
-            setIsDateRangeDropdownOpen(!isDateRangeDropdownOpen);
-            setIsRatingDropdownOpen(false);
-            setIsSortByDropdownOpen(false);
-        } else if (dropdown === "sortBy") {
-            setIsSortByDropdownOpen(!isSortByDropdownOpen);
-            setIsRatingDropdownOpen(false);
-            setIsDateRangeDropdownOpen(false);
-        }
-    };
-// console.log(model)
-// console.log('model')
-    // Close dropdowns when an option is selected
-    const closeDropdown = (dropdown) => {
-        if (dropdown === "rating") setIsRatingDropdownOpen(false);
-        if (dropdown === "dateRange") setIsDateRangeDropdownOpen(false);
-        if (dropdown === "sortBy") setIsSortByDropdownOpen(false);
-    };
-    const handleClickOutside = (event) => {
-        if (
-            dropdownRefs.one.current?.contains(event.target) ||
-            dropdownRefs.two.current?.contains(event.target) ||
-            dropdownRefs.three.current?.contains(event.target)
-        ) {
-            return;
-        }
-        // setOpenDropdown(null);
-        setIsRatingDropdownOpen(null);
-        setIsDateRangeDropdownOpen(null);
-        setIsSortByDropdownOpen(null);
-    };
-    useEffect(() => {
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, []);
-
-    const handleClearAll = () => {
-        setSearch("");
-        setSearchInput("");
-        setRatingFilter("");
-        setSortBy("");
-        setDateRange("");
-        setVerifiedOnly(false);
-        setTagsFilter("");
-        setCurrentPage(1);
-        router.replace(`?page=1`, { scroll: false }); // Clear all query params
-    };
-    return (
-        
-        <div className="bg-[#f1f3f6] ">
-        <div className="bg-[#f1f3f6] pt-10 max-w-[1370px]">
-            <div className="w-full  bg-white mb-8 custom-shadow-pdetails">
+  const handleClearAll = () => {
+    setSearch("");
+    setSearchInput("");
+    setRatingFilter("");
+    setSortBy("");
+    setDateRange("");
+    setVerifiedOnly(false);
+    setTagsFilter("");
+    setCurrentPage(1);
+    router.replace(`?page=1`, { scroll: false }); // Clear all query params
+  };
+  if (!currentModel) return null;
+  return (
+    <div className="bg-[#f1f3f6] ">
+      <div className="bg-[#f1f3f6] pt-10 max-w-[1370px]">
+        <div className="w-full  bg-white mb-8 custom-shadow-pdetails">
             <div className="p-4 md:p-6 w-full max-w-220 mx-auto">
                 {/* starting here  */}
                 <div className=" flex flex-col-reverse sm:flex sm:flex-row items-center sm:gap-10 gap-5 mt-10 mx-2">

@@ -280,7 +280,7 @@ export default function BankDetailsPage() {
 
     return (
         <section className="max-w-3xl mx-auto pt-20 px-7 mb-10">
-            <h1 className="text-2xl font-bold mb-6">How You'll Get Paid</h1>
+            <h1 className="text-2xl font-bold mb-6">How You&apos;ll Get Paid</h1>
 
             {/* Progress Bar */}
             <ol className="flex items-center justify-center w-full mb-10 sm:px-8 px-4">

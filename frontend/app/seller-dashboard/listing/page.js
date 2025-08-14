@@ -265,7 +265,7 @@ export default function ListedModelsPage() {
                     </div>
                 ) : models.length === 0 ? (
                     <p className="text-gray-600">
-                        You haven't uploaded any models yet.&nbsp;
+                        You haven&apos;t uploaded any models yet.&nbsp;
                         <button
                             onClick={() =>
                                 router.push("/seller-dashboard/add-new-model")

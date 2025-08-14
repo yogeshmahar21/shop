@@ -9,7 +9,7 @@ const parsePriceRange = (label) => {
   return { min, max };
 };
 
-const products = () => {
+const Products = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -72,4 +72,4 @@ const products = () => {
   );
 };
 
-export default products;
+export default Products;

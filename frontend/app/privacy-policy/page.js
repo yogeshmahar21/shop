@@ -39,7 +39,7 @@ export default function PrivacyPolicy() {
         </p>
         <ul className="text-lg text-gray-700 leading-relaxed list-disc pl-6 text-justify mb-6">
           <li>
-            <strong>To Provide and Improve Our Services:</strong> We use your information to create and manage your account, process transactions, and provide the services and features you request. We may also use your information to improve our website’s functionality, user experience, and features.
+            <strong>To Provide and Improve Our Services:</strong> We use your information to create and manage your account, process transactions, and provide the services and features you request. We may also use your information to improve our website&apos;s functionality, user experience, and features.
           </li>
           <li>
             <strong>To Communicate With You:</strong> We may use your email address to send you notifications, updates, promotional offers, and other relevant communications. You can opt out of marketing communications at any time by clicking the "unsubscribe" link in the email or contacting us directly.

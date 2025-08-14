@@ -10,7 +10,7 @@ export default function TermsAndConditionsPage() {
                     Terms and Conditions
                 </h1>
                 <p className="text-lg text-gray-700 leading-relaxed mb-6">
-                    Welcome to our website. These Terms and Conditions ("Terms") govern your use of this website, 
+                    Welcome to our website. These Terms and Conditions (&quot;Terms&quot;) govern your use of this website, 
                     including any services or products provided. By accessing or using our website, you agree to 
                     comply with and be bound by these Terms. If you do not agree to these Terms, please do not 
                     use our services.
@@ -96,7 +96,7 @@ export default function TermsAndConditionsPage() {
                     </h2>
                     <p className="text-lg text-gray-700 leading-relaxed mb-4">
                         We make no warranties or representations regarding the accuracy, reliability, or completeness 
-                        of the website’s content. We are not liable for any errors or omissions in the content or for 
+                        of the website&apos;s content. We are not liable for any errors or omissions in the content or for 
                         any damages resulting from the use or inability to use the website.
                     </p>
                     <p className="text-lg text-gray-700 leading-relaxed mb-4">

@@ -140,12 +140,12 @@ const OTPVerificationPage = () => {
                 alt="background"
             />
 
-            <div className=" top-18 bg-wdhite custom-shadow-otp bg-[#ffffffae] md:bg-[#fafafa] backdrop-blur-[8px] py-8 px-2 absolute sm:py-8 sm:px-4 rounded-lg max-w-100 w-full">
+            <div className=" top-18 bg-white custom-shadow-otp bg-[#ffffffae] md:bg-[#fafafa] backdrop-blur-[8px] py-8 px-2 absolute sm:py-8 sm:px-4 rounded-lg max-w-100 w-full">
                 <h2 className="text-2xl font-bold text-center mb-3">
                     OTP Verification
                 </h2>
                 <p className="text-center text-sm text-black mb-1">
-                    We’ve sent a verification code to
+                    We&apos;ve sent a verification code to
                 </p>
                 <p className="text-center font-semibold text-[#444] mb-4">
                     {maskedEmail}

@@ -809,7 +809,7 @@ const OTPVerificationPage = () => {
                     OTP Verification
                 </h2>
                 <p className="text-center text-sm text-black mb-0">
-                    We’ve sent a verification code to
+                    We&apos;ve sent a verification code to
                 </p>
                 <p className="text-center font-semibold text-[#444] mb-4">
                     {maskedEmail}

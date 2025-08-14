@@ -19,7 +19,7 @@ export default function SellerDetailPage(props) {
         }
     };
 
-    const { username } = use(props.params); 
+    const { username } = props.params;
 
     const seller = sellerList.find(
         (seller) => seller.username.toLowerCase() === username.toLowerCase()
