@@ -42,7 +42,7 @@ export default function PrivacyPolicy() {
             <strong>To Provide and Improve Our Services:</strong> We use your information to create and manage your account, process transactions, and provide the services and features you request. We may also use your information to improve our website&apos;s functionality, user experience, and features.
           </li>
           <li>
-            <strong>To Communicate With You:</strong> We may use your email address to send you notifications, updates, promotional offers, and other relevant communications. You can opt out of marketing communications at any time by clicking the "unsubscribe" link in the email or contacting us directly.
+            <strong>To Communicate With You:</strong> We may use your email address to send you notifications, updates, promotional offers, and other relevant communications. You can opt out of marketing communications at any time by clicking the &quot;unsubscribe&quot; link in the email or contacting us directly.
           </li>
           <li>
             <strong>For Customer Support:</strong> We may use your contact information to provide customer support, resolve any issues you encounter, and answer any questions you may have about our platform or services.

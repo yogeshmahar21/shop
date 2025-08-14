@@ -31,7 +31,7 @@ export default function TermsAndConditionsPage() {
                     <p className="text-lg text-gray-700 leading-relaxed mb-4">
                         By using our website, you agree to comply with all applicable laws, rules, and regulations. 
                         You agree not to engage in any activity that may harm the website, its functionality, or other 
-                        users. This includes, but is not limited to, actions that interfere with the website's performance, 
+                        users. This includes, but is not limited to, actions that interfere with the website&apos;s performance, 
                         damage the content, or violate any intellectual property rights.
                     </p>
                     <p className="text-lg text-gray-700 leading-relaxed mb-4">

@@ -856,7 +856,7 @@ const OTPVerificationPage = () => {
                     <div className="text-center mt-4">
                         <div className="mt-4 text-sm">
                             <p className="text-sm text-black mb-1">
-                                Didn't receive the OTP?
+                                Didn&apos;t receive the OTP?
                             </p>
                             {timer > 0 ? (
                                 <p className=" text-black">

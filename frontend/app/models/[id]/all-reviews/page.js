@@ -21,7 +21,7 @@ const ReviewsPage = () => {
   const searchParams = useSearchParams();
 
   // Guard against undefined params (SSR safety)
-  if (!id) return null;
+  
 
   const currentModel = useMemo(
     () => models.find((m) => m.id.toString() === id),
@@ -214,6 +214,7 @@ const ReviewsPage = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+  if (!id) return null;
 
   const handleClearAll = () => {
     setSearch("");
