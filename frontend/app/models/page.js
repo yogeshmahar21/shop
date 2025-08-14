@@ -27,6 +27,7 @@ import Link from "next/link";
 import Filter from "@/components/Filter";
 import { Heart } from "lucide-react";
 import { IoIosStar } from "react-icons/io";
+import qs from "qs";
 import { BsFillShieldLockFill } from "react-icons/bs";
 import { applyFilters } from "@/lib/filterUtils";
 import { models } from "@/lib/pData";
@@ -42,108 +43,229 @@ import Loaders from "@/components/Loader"; // if you created it
 import LikeButton from "@/components/LikeButton";
 import Dummy from "@/components/Dummy";
 import BackToTopButton from "@/components/BackToTop";
+import axios from "axios";
+import Env from "@/config/frontendEnv";
 import { IoFilterSharp } from "react-icons/io5";
 const ModelsPage = () => {
+    const apiUrl = Env.LOCAL_URL || Env.IP_URL; // Use your API URL from config
     const router = useRouter();
     const searchParams = useSearchParams();
-    const [showFilters, setShowFilters] = useState(false);
-    
-  const [searchQuery, setSearchQuery] = useState('');
-    // const searchQuery = useMemo(() => {
-    //     return searchParams.get("search")?.toLowerCase() || "";
-    // }, [searchParams]);
-    const [sortOption, setSortOption] = useState(null);
-    const [sort, setSort] = useState(searchParams.get("sort") || "");
+    // const [loading ,setLoading] = useState(false);
+    // ===== States =====
+    const [models, setModels] = useState([]);
+    const [search, setSearch] = useState("");
+    // const [searchQuery, setSearchQuery] = useState("");
+    const [sort, setSort] = useState("newest");
+    const [category, setCategory] = useState("");
+    const [software, setSoftware] = useState("");
+    const [minPrice, setMinPrice] = useState("");
+    const [maxPrice, setMaxPrice] = useState("");
     const [selectedFilters, setSelectedFilters] = useState({
         price: [],
         software: [],
         category: [],
         format: [],
     });
-    useEffect(() => {
-        const query = searchParams.get("search") || "";
-        setSearchQuery(query);
-      }, [searchParams]);
-    const [initialLoading, setInitialLoading] = useState(false); // for page load
-    const [filterLoading, setFilterLoading] = useState(false); // for filters/search
-    
+     const limit = 10; 
+    const [page, setPage] = useState(1);
+    const [pages, setPages] = useState(1);
 
-    //     useEffect(() => {
-    //   setLoading(true);
-    //   setTimeout(() => {
-    //     setFilteredModels(models); // models is your static data
-    //     setLoading(false);
-    //   }, 1000); // Delay to show loader
-    // }, []);
-    
-    // Extract filters from URL on load
-    useEffect(() => {
-        const getParamArray = (key) => {
-            const param = searchParams.getAll(key);
-            // return param.length ? param : [];
-            
-            return param.length ? param.map(decodeURIComponent) : [];
-        };
-        
-        setSelectedFilters({
-            price: getParamArray("price"),
-            software: getParamArray("software"),
-            category: getParamArray("category"),
-            format: getParamArray("format"),
-        });
-        
-        setSort(searchParams.get("sort") || "");
-    }, [searchParams]);
+    const [loading, setLoading] = useState(false);
+
+    // Wishlist
+    const [wishlistItems, setWishlistItems] = useState([]);
+    const [hasMounted, setHasMounted] = useState(false);
 
     useEffect(() => {
-        setInitialLoading(true);
-        setTimeout(() => {
-            // setFilteredModels(models); // or fetched data
-            setInitialLoading(false);
-        }, 1000);
+        setHasMounted(true);
+        const stored = localStorage.getItem("wishlistItems");
+        if (stored) setWishlistItems(JSON.parse(stored));
+
+        const query = new URLSearchParams(searchParams.toString());
+         const restoredFilters = {
+        price: query.get("price")?.split(",") || [],
+        software: query.get("software")?.split(",") || [],
+        category: query.get("category")?.split(",") || [],
+        format: query.get("format")?.split(",") || [],
+    };
+        setSearch(query.get("search") || "");
+        setSort(query.get("sort") || "newest");
+        // setCategory(query.get("category") || "");
+        setMinPrice(query.get("minPrice") || "");
+        setMaxPrice(query.get("maxPrice") || "");
+        setPage(parseInt(query.get("page")) || 1);
+        setSelectedFilters(restoredFilters);
+          fetchModels(restoredFilters);
     }, []);
-    
-    const updateURLParams = (filters) => {
-        return new Promise((resolve) => {
-            const currentParams = new URLSearchParams(searchParams.toString()); // get existing URL params
-            const newParams = new URLSearchParams();
 
-            // Add filters
-            Object.entries(filters).forEach(([key, values]) => {
-                // values.forEach((val) => newParams.append(key, val));
-                values.forEach((val) =>
-                    newParams.append(key, encodeURIComponent(val))
-                );
-            });
-
-            // Preserve existing search param
-            const currentSearch = currentParams.get("search");
-            if (currentSearch) {
-                newParams.set("search", currentSearch);
-            }
-            // Preserve sort
-            if (sort) {
-                newParams.set("sort", sort);
-            }
-            const params = new URLSearchParams(window.location.search);
-            params.set("page", 1);
-            router.push(`/models?${newParams.toString()}`);
-        });
-    };
-    const handleSortChange = (value) => {
-        const params = new URLSearchParams(searchParams);
-
-        if (value) {
-            params.set("sort", value);
-        } else {
-            params.delete("sort");
+    // Save wishlist to localStorage
+    useEffect(() => {
+        if (hasMounted) {
+            localStorage.setItem(
+                "wishlistItems",
+                JSON.stringify(wishlistItems)
+            );
         }
+    }, [wishlistItems, hasMounted]);
 
-        setSort(value);
-        params.set("page", 1);
-        router.push(`/models?${params.toString()}`);
+
+    // useEffect(() => {
+        const fetchModels = async () => {
+            try {
+                const params = new URLSearchParams();
+
+                selectedFilters.category.forEach((c) =>
+                    params.append("category", c)
+                );
+                selectedFilters.software.forEach((s) =>
+                    params.append("software", s)
+                );
+                selectedFilters.format.forEach((f) =>
+                    params.append("format", f)
+                );
+                selectedFilters.price.forEach((p) => params.append("price", p));
+
+                params.append("page", page);
+                params.append("limit", 30);
+                params.append("search", search);
+                params.append("sort", sort);
+                params.append("minPrice", minPrice);
+                params.append("maxPrice", maxPrice);
+                // params.append("Price", Price);
+
+                axios.get(`${apiUrl}/api/models/all?${params.toString()}`, {
+                    withCredentials: true,
+                });
+
+                // setLoading(true);
+                setLoading(true);
+                const res = await axios.get(
+                    `${apiUrl}/api/models/all?${params.toString()}&sort=${sort}&page=${page}&limit=${limit}`,
+                    {
+                        withCredentials: true, // ✅ send cookies
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                    }
+                );
+                console.log("Models fetched:", selectedFilters);
+                // console.log('this si res ',res)
+                setModels(res.data.models);
+                setPages(res.data.pages);
+            } catch (error) {
+                console.error("Error fetching models:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+useEffect(() => {
+    fetchModels();
+    updateURLParams();
+}, [page, search, sort, category, software, minPrice, maxPrice, selectedFilters]);
+
+    //     fetchModels();
+    //     updateURLParams(); // sync URL
+    // }, [
+    //     page,
+    //     search,
+    //     sort,
+    //     category,
+    //     software,
+    //     minPrice,
+    //     maxPrice,
+    //     selectedFilters,
+    // ]);
+
+    const handleTestStart = () => {
+        console.log("Test started");
+        // console.log(category);
+        // console.log(software)
+        console.log("selected filters software ", selectedFilters.software);
+        console.log("selected filters category ", selectedFilters.category);
     };
 
+    // const isLiked = (id) => wishlistItems.some((item) => item.id === id);
+    // const toggleLike = (item) => {
+    //     if (isLiked(item.id)) {
+    //         setWishlistItems((prev) => prev.filter((p) => p.id !== item.id));
+    //     } else {
+    //         setWishlistItems((prev) => [...prev, item]);
+    //     }
+    // };
+
+    // ===== Handlers =====
+    const handleSearchChange = (value) => {
+        setSearch(value);
+        setPage(1);
+    };
+
+    const handleSortChange = (newSort) => {
+        setSort(newSort);
+    };
+
+    const handleCategoryChange = (value) => {
+        setCategory(value);
+        setPage(1);
+    };
+
+    const handlePriceChange = (min, max) => {
+        setSelectedFilters((prev) => ({
+            ...prev,
+            price: [min, max].filter(Boolean), // Remove empty inputs
+        }));
+        setPage(1);
+    };
+
+    const handleMultiFilterChange = (updater) => {
+        setSelectedFilters((prev) =>
+            typeof updater === "function" ? updater(prev) : updater
+        );
+        setPage(1);
+    };
+
+    const resetFilters = () => {
+        setSearch("");
+        setCategory("");
+        setSoftware("");
+        setMinPrice("");
+        setMaxPrice("");
+        setSelectedFilters({
+            price: [],
+            software: [],
+            category: [],
+            format: [],
+        });
+        setSort("newest");
+        setPage(1);
+    };
+
+    const updateURLParams = () => {
+        const params = new URLSearchParams();
+        if (search) params.set("search", search);
+        if (sort !== "newest") params.set("sort", sort);
+        if (category) params.set("category", category);
+        if (minPrice) params.set("minPrice", minPrice);
+        if (maxPrice) params.set("maxPrice", maxPrice);
+        if (page > 1) params.set("page", page);
+        if (selectedFilters.price.length)
+            params.set("price", selectedFilters.price.join(","));
+        if (selectedFilters.software.length)
+            params.set("software", selectedFilters.software.join(","));
+        if (selectedFilters.category.length)
+            params.set("category", selectedFilters.category.join(","));
+        if (selectedFilters.format.length)
+            params.set("format", selectedFilters.format.join(","));
+        router.push(`?${params.toString()}`, { scroll: false });
+    };
+
+    const isLiked = (id) => wishlistItems.some((item) => item.id === id);
+    const toggleLike = (item) => {
+        if (isLiked(item.id)) {
+            setWishlistItems((prev) => prev.filter((p) => p.id !== item.id));
+        } else {
+            setWishlistItems((prev) => [...prev, item]);
+        }
+    };
     // side filter logic
     const handleSideFilter = () => {
         const openFilter1 = document.querySelector(
@@ -156,180 +278,51 @@ const ModelsPage = () => {
         openFilter2?.classList.toggle("custom-filter-animation-sub");
     };
 
-    // const [filteredModels, setFilteredModels] = useState(models);
+    // const updateURLParam = (key, value) => {
+    //     const params = new URLSearchParams(searchParams.toString());
 
-    // Filter models based on selected filters
+    //     if (value === "" || value === null || value?.length === 0) {
+    //         params.delete(key); // remove if empty
+    //     } else {
+    //         // handle arrays for multi-select filters
+    //         if (Array.isArray(value)) {
+    //             params.delete(key); // clear old values
+    //             value.forEach((val) =>
+    //                 params.append(key, encodeURIComponent(val))
+    //             );
+    //         } else {
+    //             params.set(key, value);
+    //         }
+    //     }
+
+    //     router.push(`?${params.toString()}`, { scroll: false });
+    // };
+
     // useEffect(() => {
-        const filteredModels = useMemo(() => {
-        let result = [...models];
-        // setFilterLoading(true);
-        if (selectedFilters.price.length) {
-            result = result.filter((model) => {
-                return selectedFilters.price.some((range) => {
-                    if (range === "Free") {
-                        return model.price === 0;
-                    } else if (range.includes("+")) {
-                        const min = Number(
-                            range.replace("₹", "").replace("+", "").trim()
-                        );
-                        return model.price >= min;
-                    } else {
-                        const [min, max] = range
-                            .replace(/₹/g, "")
-                            .split("-")
-                            .map(Number);
-                        return model.price >= min && model.price <= max;
-                    }
-                });
-            });
-        }
+    //     setHasMounted(true);
 
-        if (selectedFilters.software.length) {
-            result = result.filter((model) =>
-                selectedFilters.software.includes(model.software)
-            );
-        }
-
-        if (selectedFilters.category.length) {
-            result = result.filter((model) =>
-                selectedFilters.category.includes(model.category)
-            );
-        }
-
-        if (selectedFilters.format.length) {
-            result = result.filter((model) =>
-                selectedFilters.format.includes(model.format)
-            );
-        }
-        if (searchQuery) {
-            const keywords = searchQuery.toLowerCase().split(' ').filter(Boolean);
-            result = result.filter((model) => {
-                const target = `
-                  ${model.title}
-                  ${model.description}
-                  ${model.software}
-                  ${model.category}
-                  ${model.format}
-                  ${model.price}
-                  ${model.owner}
-                `.toLowerCase();
-            
-                return keywords.some(word => target.includes(word));
-              });
-
-            // result = result.filter(
-            //     (model) =>
-            //         model.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            //     model.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            //     model.software.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            //     model.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            //     model.format.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            //     model.price.toString().includes(searchQuery) ||
-            //     model.owner.toLowerCase().includes(searchQuery.toLowerCase())
-            //         // model.title.toLowerCase().includes(searchQuery) ||
-            //         // model.description.toLowerCase().includes(searchQuery) ||
-            //         // model.software.toLowerCase().includes(searchQuery) ||
-            //         // model.category.toLowerCase().includes(searchQuery) ||
-            //         // model.format.toLowerCase().includes(searchQuery) ||
-            //         // model.price.toString().includes(searchQuery) ||
-            //         // model.owner.toLowerCase().includes(searchQuery)
-            // );
-        }
-        // setFilteredModels(result); // this updates the URL and triggers data load
-        setTimeout(() => setFilterLoading(false), 300);
-        // }, [selectedFilters,models, searchQuery]);
-        return result;
-    },[selectedFilters ,searchQuery])
-   
-    const handleFilterChange = async (newFilters) => {
-        setFilterLoading(true); // show loader
-        
-        await updateURLParams(newFilters); // this updates the URL and triggers data load
-        
-        // delay hiding loader a bit to make it smooth
-        setTimeout(() => setFilterLoading(false), 400);
-    };
-    
-    // Final sorting logic
-    const finalModels = useMemo(() => {
-        let sorted = [...filteredModels];
-
-        if (sort === "price-asc") {
-            sorted.sort((a, b) => a.price - b.price);
-        } else if (sort === "price-desc") {
-            sorted.sort((a, b) => b.price - a.price);
-        } else if (sort === "popular") {
-            sorted.sort((a, b) => b.popularity - a.popularity);
-        } else if (sort === "top-rating") {
-            sorted.sort((a, b) => b.rating - a.rating);
-        }
-
-        return sorted;
-    }, [filteredModels, sort]);
-    //all aboive done correct
-
-    const page = Number(searchParams.get("page")) || 1;
-    const itemsPerPage = 24;
-
-    const start = (page - 1) * itemsPerPage + 1;
-    const end = Math.min(start + itemsPerPage - 1, finalModels.length);
-    const paginatedModels = finalModels.slice(start - 1, end);
-    const updateQueryParam = (key, value) => {
-        const params = new URLSearchParams(searchParams);
-        params.set(key, value);
-        return params.toString();
-    };
-    const totalPages = Math.ceil(finalModels.length / itemsPerPage);
-    const visiblePages = 3; // you can customize how many page numbers to show
-
+    //     const stored = localStorage.getItem("wishlistItems");
+    //     if (stored) {
+    //         setWishlistItems(JSON.parse(stored));
+    //     }
+    // }, []);
+    // useEffect(() => {
+    //     if (hasMounted) {
+    //         localStorage.setItem(
+    //             "wishlistItems",
+    //             JSON.stringify(wishlistItems)
+    //         );
+    //     }
+    // }, [wishlistItems]);
     const getVisiblePageNumbers = () => {
-        const pages = [];
-        const half = Math.floor(visiblePages / 2);
-        let startPage = Math.max(1, page - half);
-        let endPage = Math.min(totalPages, startPage + visiblePages - 1);
-
-        if (endPage - startPage + 1 < visiblePages) {
-            startPage = Math.max(1, endPage - visiblePages + 1);
-        }
-
-        for (let i = startPage; i <= endPage; i++) {
-            pages.push(i);
-        }
-
-        return pages;
+        const maxPagesToShow = 5;
+        const startPage = Math.max(1, page - Math.floor(maxPagesToShow / 2));
+        const endPage = Math.min(pages, startPage + maxPagesToShow - 1);
+        return Array.from(
+            { length: endPage - startPage + 1 },
+            (_, i) => startPage + i
+        );
     };
-    // here is the heart icon
-    // albove wroking
-    const [wishlistItems, setWishlistItems] = useState([]);
-    const [hasMounted, setHasMounted] = useState(false);
-
-    useEffect(() => {
-        setHasMounted(true);
-
-        const stored = localStorage.getItem("wishlistItems");
-        if (stored) {
-            setWishlistItems(JSON.parse(stored));
-        }
-    }, []);
-    useEffect(() => {
-        if (hasMounted) {
-            localStorage.setItem(
-                "wishlistItems",
-                JSON.stringify(wishlistItems)
-            );
-        }
-    }, [wishlistItems]);
-
-    const isLiked = (id) => wishlistItems.some((item) => item.id === id);
-
-    const toggleLike = (item) => {
-        if (isLiked(item.id)) {
-            setWishlistItems((prev) => prev.filter((p) => p.id !== item.id));
-        } else {
-            setWishlistItems((prev) => [...prev, item]);
-        }
-    };
-
     if (!hasMounted) return null; // 🚫 Avoid hydration error
     // if (initialLoading || filterLoading) {
     //    return <Loaders/>
@@ -338,28 +331,32 @@ const ModelsPage = () => {
         <div className="min-h-[100vh]  pt-14 bg-[#e4eeff] ">
             {/* <Loader /> */}
             <div className="min-h-[100vh]">
-                {initialLoading ? (
-                    <Loader />
-                ) : (
-                    
-                    
-                    <div className="">
-                        {/* <Loaders/> */}
-                        <BackToTopButton />
+                {/* {initialLoading ? ( */}
+                {/* <Loader /> */}
+                {/* // ) : ( */}
+                <div className="">
+                    {/* <Loaders/> */}
+                    <BackToTopButton />
 
-                        <div className="md:pt-4">
-                            <SearchBar setFilterLoading={setFilterLoading} />
-                        </div>
-                        {/* {filterLoading ? ( */}
-
+                    <div className="md:pt-4">
+                        <SearchBar
+                            // setFilterLoading={setFilterLoading}
+                            onSearch={handleSearchChange}
+                        />
+                        <button
+                            className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer"
+                            onClick={handleTestStart}
+                        >
+                            test start
+                        </button>
+                    </div>
+                    {/* {filterLoading ? ( */}
+                    {loading ? (
                         <div className=" bg-green-100 flex">
-                        
+                            {" "}
+                            <Loader />
                         </div>
-                        {filterLoading && (
-                           
-                          <Loader/>
-                          
-                        )}
+                    ) : (
                         <div className=" bg-[#e4eeff] flex pb-3">
                             {/* filter here */}
                             {/* {showFilters && ( */}
@@ -371,15 +368,16 @@ const ModelsPage = () => {
                                     id="custom-filter-animation-id-sub"
                                     className=" "
                                 >
-                                 
                                     <Filter
                                         selectedFilters={selectedFilters}
-                                        setSelectedFilters={setSelectedFilters}
-                                        updateURLParams={updateURLParams}
-                                        handleFilterChange={handleFilterChange}
-                                        showFilters={showFilters}
-                                        setShowFilters={setShowFilters}
-                                        setFilterLoading={setFilterLoading}
+                                        handleMultiFilterChange={
+                                            handleMultiFilterChange
+                                        }
+                                        handleCategoryChange={
+                                            handleCategoryChange
+                                        }
+                                        handlePriceChange={handlePriceChange}
+                                        resetFilters={resetFilters}
                                     />
                                 </div>
                             </div>
@@ -398,25 +396,25 @@ const ModelsPage = () => {
                                             <Sorting
                                                 onSortChange={handleSortChange}
                                                 sort={sort}
-                                                setFilterLoading={
-                                                    setFilterLoading
-                                                }
+                                                // setFilterLoading={
+                                                //     setFilterLoading
+                                                // }
                                             />
                                         </div>
                                         <div className="absolutes">
                                             <h1 className="text-xl font-semibold">
                                                 <p className="text-[15px] text-gray-600">
-                                                    Showing {start} – {end} of{" "}
-                                                    {finalModels.length} result
-                                                    {finalModels.length !== 1
+                                                    {/* Showing {start} – {end} of{" "} */}
+                                                    {models.length} result
+                                                    {models.length !== 1
                                                         ? "s"
                                                         : ""}
-                                                    {searchQuery && (
+                                                    {search && (
                                                         <>
                                                             {" "}
                                                             for "
                                                             <strong>
-                                                                {searchQuery}
+                                                                {search}
                                                             </strong>
                                                             "
                                                         </>
@@ -426,23 +424,26 @@ const ModelsPage = () => {
                                         </div>
                                     </div>
                                     <div></div>
-                                    {finalModels.length === 0 ? (
+                                    {models.length === 0 ? (
                                         <div className="text-center py-10 text-gray-600 text-lg font-medium">
                                             No results found.
                                         </div>
                                     ) : (
                                         <div>
-                                            {paginatedModels.map((model) => {
+                                            {models.map((model) => {
                                                 return (
                                                     <div
-                                                        key={model.id}
+                                                        key={model._id}
                                                         className="group border-t overflow-hidden h-autoa h-[2s00px] border-[#f0f0f0] pt-6 pb-7 lg:pl-8 pl-1 sm:pl-3 md:p-4  sm:pr-3 pr-1 transition w-full xl:p-[40px]"
                                                     >
-                                                        <div className="cursor-pointer flex ">  <div className="models-page-image-div flex w-[38%] sm:w-[40%] md:w-[35%] lg:w-[30%] xl:w-[25%] relative h-auto  sm:h-[200px] ml-[10px] flex-shrink-0">
+                                                        <div className="cursor-pointer flex ">
+                                                            {" "}
+                                                            <div className="models-page-image-div flex w-[38%] sm:w-[40%] md:w-[35%] lg:w-[30%] xl:w-[25%] relative h-auto  sm:h-[200px] ml-[10px] flex-shrink-0">
                                                                 <img
                                                                     src={
                                                                         model
-                                                                            .image[0]
+                                                                            .previewImages[0]
+                                                                            .url
                                                                     }
                                                                     alt={
                                                                         model.title
@@ -454,7 +455,7 @@ const ModelsPage = () => {
                       ${isLiked(model.id) ? "bg-[#ffc8e5]" : "bg-[#f2ecff]"}`}
                                                                 >
                                                                     <LikeButton
-                                                                        model={ 
+                                                                        model={
                                                                             model
                                                                         }
                                                                         isLiked={
@@ -466,101 +467,100 @@ const ModelsPage = () => {
                                                                     />
                                                                 </div>
                                                             </div>
-
                                                             {/* Right Side */}
                                                             <div className="min-w-50 w-full flex flex-col justify-between sm:pl-8 pl-3">
-                                                                    <Link
-                                                                        href={`/models/${model.id}`}
-                                                                        >
-                                                                        <div>
+                                                                <Link
+                                                                    href={`/models/${model._id}`}
+                                                                >
+                                                                    <div>
                                                                         <h2 className="text-[15px] group-hover:text-[#ec843f] font-semibold text-gray-800 sm:text-lg md:text-xl lg:text-2xl ">
                                                                             {
                                                                                 model.title
                                                                             }
                                                                         </h2>
-                                                                  
-                                                                    <p className="text-[13px] leading-4 text-gray-600 mt-1 single-line-truncate">
-                                                                        {
-                                                                            model.description
-                                                                        }
-                                                                    </p>
 
-                                                                    {/* Rating and reviews */}
-                                                                    <div className="flex items-start gap-2 text-yellow-500 mt-2">
-                                                                        <div className="flex items-center h-[21px] text-sm bg-green-700 text-white gap-1.5 px-1.5 rounded">
-                                                                            <p className="flex text-xs items-center pt-[1px]">
-                                                                                {
-                                                                                    model.rating
-                                                                                }
-                                                                            </p>
-                                                                            <IoIosStar className="text-[11px] flex items-center" />
-                                                                        </div>
-                                                                        <div className="flex gap-0 ">
-                                                                            <p className="text-[#4a5565] text-[13px] sm:text-sm">
-                                                                                (
-                                                                                {
-                                                                                    model.ratings
-                                                                                }
-                                                                            </p>
-                                                                            <p className="text-[#4a5565] text-sm hidden sm:block  ">
-                                                                                &nbsp;Ratings
-                                                                                &&nbsp;
-                                                                                {
-                                                                                    model.reviews
-                                                                                }
-                                                                                &nbsp;Reviews
-                                                                            </p>
-                                                                            <p className="text-[#4a5565] text-[13px] sm:text-sm">
-                                                                                {" "}
-                                                                                )
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
+                                                                        <p className="text-[13px] leading-4 text-gray-600 mt-1 single-line-truncate">
+                                                                            {
+                                                                                model.description
+                                                                            }
+                                                                        </p>
 
-                                                                    {/* Software and Category */}
-                                                                    {/* <div className="flwex justify-betweewn"> */}
-                                                                    <div>
-                                                                        <div className="text-[12px] sm:text-sm text-gray-700 sm:mt-2.5 mt-1.5">
-                                                                            <span className="font-medium">
-                                                                                {
-                                                                                    model.software
-                                                                                }
-                                                                            </span>{" "}
-                                                                            |{" "}
-                                                                            <span className="font-medium">
-                                                                                {
-                                                                                    model.category
-                                                                                }
-                                                                            </span>
-                                                                        </div>
-                                                                        <div className="text-[12px] sm:text-sm text-gray-500 sm:mt-1">
-                                                                            Owner:{" "}
-                                                                            <span className="font-medium text-gray-700">
-                                                                                {
-                                                                                    model.owner
-                                                                                }
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-1 sm:mt-4">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <p className="text-xl font-bold">
-                                                                                {model.price ===
-                                                                                0
-                                                                                    ? "Free"
-                                                                                    : `₹${model.price}`}
-                                                                            </p>
-                                                                            <div className="text-[#0000008f] flex items-center gap-0.5 text-xs">
-                                                                                <BsFillShieldLockFill className="text-[#259f3f] text-lg" />
-                                                                                <p>
-                                                                                    Secure
-                                                                                    Payment
+                                                                        {/* Rating and reviews */}
+                                                                        <div className="flex items-start gap-2 text-yellow-500 mt-2">
+                                                                            <div className="flex items-center h-[21px] text-sm bg-green-700 text-white gap-1.5 px-1.5 rounded">
+                                                                                <p className="flex text-xs items-center pt-[1px]">
+                                                                                    {
+                                                                                        model.rating
+                                                                                    }
+                                                                                </p>
+                                                                                <IoIosStar className="text-[11px] flex items-center" />
+                                                                            </div>
+                                                                            <div className="flex gap-0 ">
+                                                                                <p className="text-[#4a5565] text-[13px] sm:text-sm">
+                                                                                    (
+                                                                                    {
+                                                                                        model.ratings
+                                                                                    }
+                                                                                </p>
+                                                                                <p className="text-[#4a5565] text-sm hidden sm:block  ">
+                                                                                    &nbsp;Ratings
+                                                                                    &&nbsp;
+                                                                                    {
+                                                                                        model.reviews
+                                                                                    }
+                                                                                    &nbsp;Reviews
+                                                                                </p>
+                                                                                <p className="text-[#4a5565] text-[13px] sm:text-sm">
+                                                                                    {" "}
+                                                                                    )
                                                                                 </p>
                                                                             </div>
-                                                                            {/* </div> */}
+                                                                        </div>
+
+                                                                        {/* Software and Category */}
+                                                                        {/* <div className="flwex justify-betweewn"> */}
+                                                                        <div>
+                                                                            <div className="text-[12px] sm:text-sm text-gray-700 sm:mt-2.5 mt-1.5">
+                                                                                <span className="font-medium">
+                                                                                    {
+                                                                                        model.software
+                                                                                    }
+                                                                                </span>{" "}
+                                                                                |{" "}
+                                                                                <span className="font-medium">
+                                                                                    {
+                                                                                        model.category
+                                                                                    }
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="text-[12px] sm:text-sm text-gray-500 sm:mt-1">
+                                                                                Owner:{" "}
+                                                                                <span className="font-medium text-gray-700">
+                                                                                    {
+                                                                                        model.seller
+                                                                                    }
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-1 sm:mt-4">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <p className="text-xl font-bold">
+                                                                                    {model.price ===
+                                                                                    0
+                                                                                        ? "Free"
+                                                                                        : `₹${model.price}`}
+                                                                                </p>
+                                                                                <div className="text-[#0000008f] flex items-center gap-0.5 text-xs">
+                                                                                    <BsFillShieldLockFill className="text-[#259f3f] text-lg" />
+                                                                                    <p>
+                                                                                        Secure
+                                                                                        Payment
+                                                                                    </p>
+                                                                                </div>
+                                                                                {/* </div> */}
+                                                                            </div>
                                                                         </div>
                                                                     </div>
-                                                                </div>
                                                                 </Link>
                                                                 {/* Price + Secure Payment */}
                                                             </div>
@@ -572,29 +572,28 @@ const ModelsPage = () => {
                                     )}
                                     {/* fgdfg */}
                                     <div className="flex justify-center items-center mb-5 gap-2 mt-6 flex-wrap">
-                                        {finalModels.length > 24 &&
-                                            page > 1 && (
-                                                <button
-                                                    onClick={() =>
-                                                        router.push(
-                                                            `/models?${updateQueryParam(
-                                                                "page",
-                                                                page - 1
-                                                            )}`
-                                                        )
-                                                    }
-                                                    className={`flex items-center justify-center h-[35px] w-[35px] rounded-full ${
-                                                        page === 1
-                                                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                                            : "bg-gray-200 hover:bg-gray-300 cursor-pointer"
-                                                    }`}
-                                                    disabled={page === 1}
-                                                >
-                                                    <ChevronLeft className="w-4 h-4" />
-                                                </button>
-                                            )}
+                                        {models.length > 24 && page > 1 && (
+                                            <button
+                                                onClick={() =>
+                                                    router.push(
+                                                        `/models?${updateQueryParam(
+                                                            "page",
+                                                            page - 1
+                                                        )}`
+                                                    )
+                                                }
+                                                className={`flex items-center justify-center h-[35px] w-[35px] rounded-full ${
+                                                    page === 1
+                                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                                        : "bg-gray-200 hover:bg-gray-300 cursor-pointer"
+                                                }`}
+                                                disabled={page === 1}
+                                            >
+                                                <ChevronLeft className="w-4 h-4" />
+                                            </button>
+                                        )}
                                         {/* Page Numbers */}
-                                        {finalModels.length > 24 &&
+                                        {models.length > 24 &&
                                             getVisiblePageNumbers().map((p) => (
                                                 <button
                                                     key={p}
@@ -617,8 +616,8 @@ const ModelsPage = () => {
                                             ))}
 
                                         {/* Next Button */}
-                                        {finalModels.length > 24 &&
-                                            end < finalModels.length && (
+                                        {models.length > 24 &&
+                                            end < models.length && (
                                                 <button
                                                     onClick={() =>
                                                         router.push(
@@ -644,9 +643,9 @@ const ModelsPage = () => {
                                 </div>
                             </div>
                         </div>
-                        {/* )} */}
-                    </div>
-                )}
+                    )}
+                </div>
+                {/* // )} */}
             </div>
         </div>
     );

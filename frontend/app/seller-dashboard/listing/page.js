@@ -30,7 +30,7 @@ export default function ListedModelsPage() {
         const fetchModels = async () => {
             setFilterLoading(true); // Reset loading state before fetching
             try {
-                // setFilterLoading(true);
+                // setFilterLoading(true); 
                 const res = await fetch(
                     `${apiUrl}/api/models/mine?sort=${sort}&page=${page}&limit=${limit}`,
                     {

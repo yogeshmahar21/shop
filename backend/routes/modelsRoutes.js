@@ -10,6 +10,7 @@ const {
     getModelFiles,
     updateModel,
     getModelImages,
+    getAllModels,
 } = require("../controllers/modelsController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -25,6 +26,8 @@ router.post(
     ]),
     uploadModel
 );
+
+router.get("/all", getAllModels);
 
 router.get("/mine", protect, getMyModels);
 

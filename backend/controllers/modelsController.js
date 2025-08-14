@@ -236,6 +236,120 @@ exports.getModelById = async (req, res) => {
     }
 };
 
+exports.getAllModels = async (req, res) => {
+    try {
+        
+        const {
+            page = 1,
+            limit = 30,
+            search,
+            sort,
+            price,
+            software,
+            category,
+            minPrice,
+            maxPrice,
+        } = req.query;
+
+        const query = {};
+        const toArray = (value) => {
+            if (!value) return [];
+            return Array.isArray(value) ? value : [value];
+        };
+
+        // Convert all filters to arrays
+        const categoryArray = toArray(category);
+        const softwareArray = toArray(software);
+        // const formatArray = toArray(format);
+        const priceArray = toArray(price);
+        // Search
+        if (search) {
+            console.log("this is search ", search);
+            query.$or = [
+                { title: { $regex: search, $options: "i" } },
+                { description: { $regex: search, $options: "i" } },
+                { category: { $regex: search, $options: "i" } },
+                { software: { $regex: search, $options: "i" } },
+            ];
+        }
+        if (categoryArray.length) {
+            query.category = { $in: categoryArray };
+        }
+
+        // ✅ Software filter
+        if (softwareArray.length) {
+            query.software = { $in: softwareArray };
+        }
+
+        // ✅ Format filter
+        // if (formatArray.length) {
+        //     query.format = { $in: formatArray };
+        // }
+
+        // Price filter
+       // Price filter - combine into one min/max
+if (priceArray.length > 0) {
+    let minPriceFilter = Infinity;
+    let maxPriceFilter = -Infinity;
+    let hasPlus = false;
+
+    priceArray.forEach(range => {
+        if (range === "Free") {
+            minPriceFilter = Math.min(minPriceFilter, 0);
+            maxPriceFilter = Math.min(minPriceFilter, 0);
+        } else if (range.includes("-")) {
+            const [min, max] = range
+                .replace(/₹/g, "")
+                .split("-")
+                .map(v => parseInt(v.trim(), 10));
+
+            if (!isNaN(min)) minPriceFilter = Math.min(minPriceFilter, min);
+            if (!isNaN(max)) maxPriceFilter = Math.max(maxPriceFilter, max);
+        } else if (range.includes("+")) {
+            const min = parseInt(range.replace(/₹|\+/g, "").trim(), 10);
+            if (!isNaN(min)) minPriceFilter = Math.min(minPriceFilter, min);
+            hasPlus = true; // means no upper bound
+        }
+    });
+
+    query.price = {};
+    if (minPriceFilter !== Infinity) query.price.$gte = minPriceFilter;
+    if (!hasPlus && maxPriceFilter !== -Infinity) query.price.$lte = maxPriceFilter;
+}
+
+
+        console.log("this is query ", req.query);
+        console.log("this is body ", req.body);
+        // Sort
+        let sortOption = {};
+        if (sort === "price_asc") sortOption.price = 1;
+        else if (sort === "price_desc") sortOption.price = -1;
+        else if (sort === "newest") sortOption.createdAt = -1;
+        else if (sort === "oldest") sortOption.createdAt = 1;
+
+        // Pagination
+        const skip = (page - 1) * limit;
+
+        const models = await ModelData.find(query)
+            .select("-zipFilePath") // 🚀 exclude zipFilePath from results
+            .sort(sortOption)
+            .skip(skip)
+            .limit(Number(limit));
+
+        const total = await ModelData.countDocuments(query);
+
+        res.json({
+            total,
+            page: Number(page),
+            pages: Math.ceil(total / limit),
+            models,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
 exports.getModelFiles = async (req, res) => {
     try {
         const modelId = req.params.id;
@@ -441,7 +555,7 @@ exports.updateModel = async (req, res) => {
             finalZipFile = zipFileName;
         }
 
-        [...newImages, newZip].forEach((f) => {
+        [...newImages].forEach((f) => {
             try {
                 fs.unlinkSync(f.path);
             } catch (err) {
@@ -452,6 +566,19 @@ exports.updateModel = async (req, res) => {
                 );
             }
         });
+        if (newZip) {
+            [newZip].forEach((f) => {
+                try {
+                    fs.unlinkSync(f.path);
+                } catch (err) {
+                    console.warn(
+                        "Failed to delete temp file:",
+                        f.path,
+                        err.message
+                    );
+                }
+            });
+        }
 
         Object.assign(model, {
             title: title || model.title,

@@ -30,8 +30,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search } from 'lucide-react';
-
-const SearchBar = ({  setFilterLoading }) => {
+ 
+const SearchBar = ({  setFilterLoading, onSearch  }) => {
   const [disabled, setDisabled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const inputRef = useRef(null);
@@ -43,6 +43,7 @@ const SearchBar = ({  setFilterLoading }) => {
     const query = searchParams.get("search") || "";
     setSearchQuery(query);
   }, [searchParams]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const params = new URLSearchParams(searchParams.toString());
@@ -55,17 +56,15 @@ const SearchBar = ({  setFilterLoading }) => {
       params.set("page", 1);
     }
 
-    setFilterLoading(true);
+    // setFilterLoading(true);
     setDisabled(true);
     inputRef.current.blur();
 
-    setTimeout(() => {
-      setDisabled(false);
-      setFilterLoading(false); // ✅ Hide loader after short delay
-    }, 4000);
-    if (searchQuery) {
-      router.push(`/models?search=${encodeURIComponent(searchQuery)}`);
-  }
+ if (onSearch) onSearch(searchQuery);
+
+     router.push(`?${params.toString()}`, { scroll: false });
+
+    setDisabled(false);
   };
 
   const handleInputFocus = () => {

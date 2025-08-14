@@ -35,7 +35,7 @@ export default function ModelDetailPage(props) {
     const isLiked = (id) => wishlistItems.some((item) => item.id === id);
     const [loading, setLoading] = useState(false);
     const [filterLoading, setFilterLoading] = useState(false);
-    const [imageFiles ,setImageFiles] = useState([])
+    const [imageFiles, setImageFiles] = useState([]);
     const apiUrl = Env.LOCAL_URL || Env.IP_URL;
     // useEffect(() => {
     //     setLoading(true);
@@ -69,109 +69,163 @@ export default function ModelDetailPage(props) {
 
     //     fetchModelToEdit();
     // }, [id]);
-    useEffect(() => async () => {
-        const fetchModel = async () => {
-            try {
-                setLoading(true);
-                const res = await fetch(`${apiUrl}/api/models/${id}`, {
-                    method: "GET",
-                    credentials: "include", // 🔑 Sends auth cookies
-                    headers: {
-                        "Content-Type": "application/json", // optional for DELETE but okay
-                    },
-                });
-                //  const fileRes = await fetch(
-                //     `${apiUrl}/api/models/${id}/files`,
-                //     {
-                //         method: "GET",
-                //         credentials: "include", // 🔑 Sends auth cookies
-                //         headers: {
-                //             "Content-Type": "application/json", // optional for DELETE but okay
-                //         },
-                //     }
-                // );
-                // const fileData = await fileRes.json();
-                const data = await res.json();
-                // alert("Model fetched successfully");
-                setModel(data);
-                setImageFiles(data.previewImages);
-                console.log("this is res data ", data);
-                // console.log(data)
-            } catch (error) {
-                console.error("Error fetching model:", error);
-            } finally {
-                setLoading(false);
-            } 
-        };
+    useEffect(
+        () => async () => {
+            const fetchModel = async () => {
+                try {
+                    setLoading(true);
+                    const res = await fetch(`${apiUrl}/api/models/${id}`, {
+                        method: "GET",
+                        credentials: "include", // 🔑 Sends auth cookies
+                        headers: {
+                            "Content-Type": "application/json", // optional for DELETE but okay
+                        },
+                    });
+                    //  const fileRes = await fetch(
+                    //     `${apiUrl}/api/models/${id}/files`,
+                    //     {
+                    //         method: "GET",
+                    //         credentials: "include", // 🔑 Sends auth cookies
+                    //         headers: {
+                    //             "Content-Type": "application/json", // optional for DELETE but okay
+                    //         },
+                    //     }
+                    // );
+                    // const fileData = await fileRes.json();
+                    const data = await res.json();
+                    // alert("Model fetched successfully");
+                    setModel(data);
+                    setImageFiles(data.previewImages);
+                    console.log("this is res data ", data);
+                    // console.log(data)
+                } catch (error) {
+                    console.error("Error fetching model:", error);
+                } finally {
+                    setLoading(false);
+                }
+            };
 
-        // if (id) 
+            // if (id)
             fetchModel();
-    }, [id]);
+        },
+        [id]
+    );
     console.log("this is imageFiles  ", imageFiles);
 
-const ProductDetailSkeleton = () => {
-  return (
-    <div className="animate-pulse pt-7 w-full">
-      {/* Mobile title */}
-      <div className="flex justify-center mb-5 md:hidden">
-        <div className="h-6 bg-gray-300 rounded w-1/2"></div>
-      </div>
+    const ProductDetailSkeleton = () => {
+        return (
+            <div className="animate-pulse pt-7 w-full">
+                {/* Mobile title */}
+                <div className="flex justify-center mb-5 md:hidden">
+                    <div className="h-6 bg-gray-300 rounded w-1/2"></div>
+                </div>
 
-      <div className="mb-5 px-4 md:px-4 flex md:flex-row flex-col items-center md:items-start gap-3 w-full">
-        {/* Thumbnails */}
-        <div className="flex flex-row md:flex-col min-w-[74px] max-w-full md:max-h-[350px] overflow-x-auto md:overflow-y-auto space-x-2 md:space-x-0 md:space-y-2">
-          {[...Array(5)].map((_, index) => (
-            <div
-              key={index}
-              className="p-[1px] w-17 h-17 flex-shrink-0 bg-gray-300 rounded"
-            ></div>
-          ))}
-        </div>
+                <div className="mb-5 px-4 md:px-4 flex md:flex-row flex-col items-center md:items-start gap-3 w-full">
+                    {/* Thumbnails */}
+                    <div className="flex flex-row md:flex-col min-w-[74px] max-w-full md:max-h-[350px] overflow-x-auto md:overflow-y-auto space-x-2 md:space-x-0 md:space-y-2">
+                        {[...Array(5)].map((_, index) => (
+                            <div
+                                key={index}
+                                className="p-[1px] w-17 h-17 flex-shrink-0 bg-gray-300 rounded"
+                            ></div>
+                        ))}
+                    </div>
 
-        {/* Main Image */}
-        <div className="lg:mr-8 relative w-full max-w-full min-w-[300px] h-[300px] md:w-[400px] md:h-[300px] lg:ml-1 lg:w-[750px] bg-gray-300 border border-[#0000001c] rounded-sm"></div>
+                    {/* Main Image */}
+                    <div className="lg:mr-8 relative w-full max-w-full min-w-[300px] h-[300px] md:w-[400px] md:h-[300px] lg:ml-1 lg:w-[750px] bg-gray-300 border border-[#0000001c] rounded-sm"></div>
 
-        {/* Right Column */}
-        <div className="w-full md:ml-4 mt-4 md:mt-0">
-          <div className="w-full space-y-4">
-            {/* Title */}
-            <div className="hidden md:block h-6 bg-gray-300 rounded w-1/2"></div>
+                    {/* Right Column */}
+                    <div className="w-full md:ml-4 mt-4 md:mt-0">
+                        <div className="w-full space-y-4">
+                            {/* Title */}
+                            <div className="hidden md:block h-6 bg-gray-300 rounded w-1/2"></div>
 
-            {/* Rating */}
-            <div className="flex gap-2 mt-1.5">
-              <div className="h-[21px] bg-gray-300 rounded w-12"></div>
-              <div className="h-[21px] bg-gray-300 rounded w-28"></div>
+                            {/* Rating */}
+                            <div className="flex gap-2 mt-1.5">
+                                <div className="h-[21px] bg-gray-300 rounded w-12"></div>
+                                <div className="h-[21px] bg-gray-300 rounded w-28"></div>
+                            </div>
+
+                            {/* Price */}
+                            <div className="flex items-center gap-2 mb-1">
+                                <div className="h-8 bg-gray-300 rounded w-20"></div>
+                            </div>
+
+                            {/* Description */}
+                            <div className="h-4 bg-gray-300 rounded w-full"></div>
+                            <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+
+                            {/* Software / Category */}
+                            <div className="h-4 bg-gray-300 rounded w-40"></div>
+                            {/* Format */}
+                            <div className="h-4 bg-gray-300 rounded w-28"></div>
+                            {/* Seller */}
+                            <div className="h-4 bg-gray-300 rounded w-32"></div>
+                        </div>
+
+                        {/* Buttons */}
+                        <div className="bottom-0 w-full mt-5 left-0 flex flex-col md:flex-row gap-3">
+                            <div className="bg-gray-300 rounded-full w-full md:w-[50%] h-10"></div>
+                            <div className="bg-gray-300 rounded-full w-full md:w-[50%] h-10"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
+        );
+    };
 
-            {/* Price */}
-            <div className="flex items-center gap-2 mb-1">
-              <div className="h-8 bg-gray-300 rounded w-20"></div>
+    const RelatedModelsSkeleton = () => {
+        const skeletonArray = Array(6).fill(null); // Number of skeleton slides
+
+        return (
+            <div className="lg:px-8 md:px-7 px-5 w-full bg-white border-t border-gray-200 pt-7">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6">
+                    Related Models You May Like
+                </h2>
+
+                <Swiper
+                    slidesPerView="auto"
+                    spaceBetween={15}
+                    pagination={{
+                        el: ".custom-pagination-related",
+                        clickable: true,
+                    }}
+                    modules={[Pagination]}
+                    className="lg:max-w-full"
+                >
+                    {skeletonArray.map((_, index) => (
+                        <SwiperSlide
+                            key={index}
+                            className="!w-[250px] max-w-none animate-pulse"
+                        >
+                            <div className="w-full max-w-[280px] min-w-[150px] bg-white rounded-[10px] overflow-hidden border border-[#c9c9c9]">
+                                {/* Image Placeholder */}
+                                <div className="w-full h-48 bg-gray-300"></div>
+
+                                <div className="p-4">
+                                    {/* Title Placeholder */}
+                                    <div className="h-5 bg-gray-300 rounded w-3/4 mb-3"></div>
+
+                                    {/* Rating Placeholder */}
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="h-5 w-12 bg-gray-300 rounded"></div>
+                                        <div className="h-4 w-8 bg-gray-300 rounded"></div>
+                                    </div>
+
+                                    {/* Price Placeholder */}
+                                    <div className="h-4 bg-gray-300 rounded w-16"></div>
+                                </div>
+                            </div>
+                        </SwiperSlide>
+                    ))}
+                </Swiper>
+
+                <div className="resize-pagination-0 mt-4 pb-15 text-center">
+                    <div className="custom-pagination-related"></div>
+                </div>
             </div>
-
-            {/* Description */}
-            <div className="h-4 bg-gray-300 rounded w-full"></div>
-            <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-
-            {/* Software / Category */}
-            <div className="h-4 bg-gray-300 rounded w-40"></div>
-            {/* Format */}
-            <div className="h-4 bg-gray-300 rounded w-28"></div>
-            {/* Seller */}
-            <div className="h-4 bg-gray-300 rounded w-32"></div>
-          </div>
-
-          {/* Buttons */}
-          <div className="bottom-0 w-full mt-5 left-0 flex flex-col md:flex-row gap-3">
-            <div className="bg-gray-300 rounded-full w-full md:w-[50%] h-10"></div>
-            <div className="bg-gray-300 rounded-full w-full md:w-[50%] h-10"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-
+        );
+    };
 
     // useEffect(() => {
     //     const current = models.find((item) => item.id.toString() === id);
@@ -259,25 +313,24 @@ const ProductDetailSkeleton = () => {
 
     // // const [mainImage, setMainImage] = useState(models);
 
-        // const toggleLike = (item) => {
-        //     if (isLiked(item.id)) {
-        //         setWishlistItems((prev) => prev.filter((p) => p.id !== item.id));
-        //     } else {
-        //         setWishlistItems((prev) => [...prev, item]);
-        //     }
-        // };
+    // const toggleLike = (item) => {
+    //     if (isLiked(item.id)) {
+    //         setWishlistItems((prev) => prev.filter((p) => p.id !== item.id));
+    //     } else {
+    //         setWishlistItems((prev) => [...prev, item]);
+    //     }
+    // };
 
     // if (!hasMounted) return null; // 🚫 Avoid hydration error\
 
     return (
         <div className="bg-[#ffffff] min-h-[100vh] justify-items-center ">
             <div className="bg-white pt-14 md:pt-17 w-full pb-2 bg-gradient-to-b from-[#1e1e1e] to-white">
-                
                 <SearchBar setFilterLoading={setFilterLoading} />
             </div>
-            {!loading ? (
+            {loading ? (
                 <>
-               <ProductDetailSkeleton />
+                    <ProductDetailSkeleton />
                 </>
             ) : (
                 <div className="w-full pt-4 md:pt-7 max-w-[1370px] min-h-[100vh] bg-white">
@@ -317,7 +370,9 @@ const ProductDetailSkeleton = () => {
                                                 ? "border-blue-600"
                                                 : "border-gray-300"
                                         }`}
-                                        onMouseEnter={() => setMainImage(file.url)}
+                                        onMouseEnter={() =>
+                                            setMainImage(file.url)
+                                        }
                                     />
                                 </div>
                             ))}
@@ -415,9 +470,14 @@ const ProductDetailSkeleton = () => {
 
                         <div className="bg-[#f1f3f6] pb-6">
                             <div className=" bg-green-400 custom-shadow-pdetails ">
-                                <RelatedProducts currentModel={model} />
+                                {loading ? (
+                                    <>
+                                        <RelatedModelsSkeleton />
+                                    </>
+                                ) : (
+                                    <RelatedProducts currentModel={model} />
+                                )}
                             </div>
-                            
                         </div>
 
                         {/* Recommended Products */}
@@ -427,7 +487,7 @@ const ProductDetailSkeleton = () => {
                                 <RecommendedProducts
                                     currentModelId={model.id}
                                     allModels={models}
-                                />
+                                />  
                             </div>
                         </div> */}
                         {/* Recently Viewed */}

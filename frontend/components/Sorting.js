@@ -7,11 +7,12 @@ const Sorting = ({ onSortChange, sort ,setFilterLoading}) => {
     const searchParams = useSearchParams(); 
     
     const sortOptions = [
-      { label: "Default", value: "" },
-      { label: "Price: Low to High", value: "price-asc" },
-      { label: "Price: High to Low", value: "price-desc" },
-      { label: "Most Popular", value: "popular" },
-      { label: "Top Rated", value: "top-rating" },
+      { label: "Newest First", value: "newest" },
+      { label: "Oldest First", value: "oldest" },
+      { label: "Top Rated", value: "top_rating" },
+      { label: "Price: Low to High", value: "price_asc" },
+      { label: "Price: High to Low", value: "price_desc" },
+      // { label: "Most Popular", value: "popular" },
     ];
     
     // const [sortOption, setSortOption] = useState(searchParams.get("sort") || "Default");
@@ -28,7 +29,7 @@ const [sortOption, setSortOption] = useState(initialSortLabel);
       // Set the selected sorting option
       setSortOption(label);
       onSortChange(value); 
-      setFilterLoading(true); 
+      // setFilterLoading(true); 
       // Update the URL with the new sort parameter
       const params = new URLSearchParams(searchParams);
       if (value) {
@@ -40,7 +41,7 @@ const [sortOption, setSortOption] = useState(initialSortLabel);
       // Close the dropdown and update the router
       setIsOpen(false);
       await router.push(`/models?${params.toString()}`); 
-      setTimeout(() => setFilterLoading(false), 400); // Smooth hide loader
+      // setTimeout(() => setFilterLoading(false), 400); // Smooth hide loader
     };
     const dropdownRef = useRef(null);
 
