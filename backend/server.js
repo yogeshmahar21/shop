@@ -13,7 +13,9 @@ app.use("/upload", express.static("upload"));
 
 const allowedOrigins = [
     "http://localhost:3000",
-    "http://192.168.56.1:3000", // replace with your actual local IP
+    "http://192.168.56.1:3000",
+    "https://shop-a5rlgegta-yogesh-mahars-projects.vercel.app/",
+    "https://shop-frontend-8ij2.onrender.com", // replace with your actual local IP
 ];
 app.use(express.json());
 app.use(cookieParser());
