@@ -82,8 +82,8 @@ export default function SignUpPage() {
         const fetchCountries = async () => {
             try {
                 const baseURL = window.location.hostname.includes("localhost")
-                    ? "http://localhost:5000"
-                    : "http://192.168.31.186:5000"; // 👈 your actual IP
+                     "http://localhost:5000"
+                     // 👈 your actual IP
                 const res = await fetch(`${apiUrl}/api/countries`);
                 const data = await res.json();
                 setCountryOptions(data);
